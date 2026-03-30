@@ -11,7 +11,6 @@ API_TOKEN = '8745362560:AAF2rJV_zyoKAkYVlj8TuXqPipP_0ArkTrQ'
 ADMIN_ID = 925896498
 MARKETING_ID = 925896498
 CHANNEL_ID = '@heaphestwarp'
-CHAT_ID = ''
 REVIEWS_LINK = 'https://t.me/repheaphest'
 PAYMENT_REQUISITES = "Картка: 4874070053789234 (Моно) Денис Ф."
 
@@ -20,10 +19,9 @@ app = Flask('')
 
 # База даних та стани
 user_db = set() 
-user_feedback_state = {}
 marketing_state = {}
 
-# --- ВЕБ-СЕРВЕР ДЛЯ RENDER ---
+# --- ВЕБ-СЕРВЕР ---
 @app.route('/')
 def home():
     return "Bot is alive!"
@@ -43,10 +41,10 @@ def generate_order_code():
 
 def check_subscribe(user_id):
     try:
+        # Перевірка ТІЛЬКИ на канал
         status_channel = bot.get_chat_member(CHANNEL_ID, user_id).status
-        status_chat = bot.get_chat_member(CHAT_ID, user_id).status
         allowed = ['member', 'administrator', 'creator']
-        return status_channel in allowed and status_chat in allowed
+        return status_channel in allowed
     except:
         return False
 
@@ -54,7 +52,17 @@ def check_subscribe(user_id):
 def main_menu():
     markup = types.ReplyKeyboardMarkup(resize_keyboard=True, row_width=2)
     markup.add("⭐ Купити зірки", "💎 Купити Premium")
-    markup.add("💬 Відгуки", "🆘 Тех. Підтримка")
+    markup.add("📱 Вірт. номери", "💬 Відгуки") # Додано кнопку номерів
+    markup.add("🆘 Тех. Підтримка")
+    return markup
+
+def virt_numbers_menu():
+    markup = types.InlineKeyboardMarkup(row_width=1)
+    markup.add(
+        types.InlineKeyboardButton("🇺🇦 Україна — 150₴", callback_data="buy|Virt|Ukraine|150₴"),
+        types.InlineKeyboardButton("🇺🇸 США — 100₴", callback_data="buy|Virt|USA|100₴"),
+        types.InlineKeyboardButton("🇵🇱 Польща — 120₴", callback_data="buy|Virt|Poland|120₴")
+    )
     return markup
 
 def buy_stars_menu():
@@ -85,10 +93,9 @@ def start(message):
         bot.send_message(message.chat.id, welcome_text, parse_mode='HTML', reply_markup=main_menu())
     else:
         markup = types.InlineKeyboardMarkup()
-        markup.add(types.InlineKeyboardButton("📢 Канал", url=f"https://t.me/{CHANNEL_ID[1:]}"))
-        markup.add(types.InlineKeyboardButton("💬 Чат", url=f"https://t.me/{CHAT_ID[1:]}"))
+        markup.add(types.InlineKeyboardButton("📢 Підписатися на канал", url=f"https://t.me/{CHANNEL_ID[1:]}"))
         markup.add(types.InlineKeyboardButton("Я підписався ✅", callback_data="check"))
-        bot.send_message(message.chat.id, "⚠️ <b>Доступ обмежений!</b>\nПідпишіться на наші ресурси:", parse_mode='HTML', reply_markup=markup)
+        bot.send_message(message.chat.id, "⚠️ <b>Доступ обмежений!</b>\nДля використання бота підпишіться на наш канал:", parse_mode='HTML', reply_markup=markup)
 
 @bot.message_handler(commands=['admin'])
 def admin_panel(message):
@@ -100,20 +107,17 @@ def admin_panel(message):
 # --- CALLBACKS ---
 @bot.callback_query_handler(func=lambda call: True)
 def callback_listener(call):
-    # Перевірка підписки
     if call.data == "check":
         if check_subscribe(call.from_user.id):
             bot.delete_message(call.message.chat.id, call.message.message_id)
             bot.send_message(call.message.chat.id, "✅ Доступ відкрито!", reply_markup=main_menu())
         else:
-            bot.answer_callback_query(call.id, "❌ Ви все ще не підписані!", show_alert=True)
+            bot.answer_callback_query(call.id, "❌ Ви все ще не підписані на канал!", show_alert=True)
 
-    # Початок розсилки
     elif call.data == "mkt_start":
         marketing_state[call.from_user.id] = "waiting_promo"
         bot.edit_message_text("📸 <b>Надішліть фото з описом</b> для розсилки:", call.message.chat.id, call.message.message_id, parse_mode='HTML')
 
-    # Вибір Premium
     elif call.data.startswith("prem_type_"):
         p_type = call.data.split("_")[2]
         markup = types.InlineKeyboardMarkup(row_width=1)
@@ -125,35 +129,30 @@ def callback_listener(call):
                        types.InlineKeyboardButton("3 міс. — 550₴", callback_data="buy|Prem(Gift)|3міс|550₴"))
         bot.edit_message_text(f"💎 Оберіть термін ({p_type}):", call.message.chat.id, call.message.message_id, reply_markup=markup)
 
-    # Оформлення замовлення
     elif call.data.startswith("buy|"):
         _, category, name, price = call.data.split("|")
         order_code = generate_order_code()
         pay_text = (f"<b>💳 Оформлення: {category} {name}</b>\n\n💵 <b>До сплати: {price}</b>\n"
                     f"📝 Коментар: <code>{order_code}</code>\n\n<b>Реквізити:</b>\n{PAYMENT_REQUISITES}\n\n"
                     "❗ <i>Надішліть скріншот чеку сюди в бот.</i>")
-        msg = bot.edit_message_text(pay_text, call.message.chat.id, call.message.message_id, parse_mode='HTML')
+        msg = bot.send_message(call.message.chat.id, pay_text, parse_mode='HTML')
         bot.register_next_step_handler(msg, process_payment_proof, f"{category} {name}", price, order_code)
 
-    # Кнопки Адміна (Підтвердження/Відхилення)
     elif "adm_" in call.data:
         parts = call.data.split("_")
-        action = parts[1] # confirm або decline
-        target_id = parts[2] # ID користувача
-        
+        action, target_id = parts[1], parts[2]
         if action == "confirm":
-            bot.send_message(target_id, "🌟 <b>Оплата підтверджена!</b>\nВаше замовлення вже виконується менеджером.", parse_mode='HTML')
+            bot.send_message(target_id, "🌟 <b>Оплата підтверджена!</b>\nМенеджер зв'яжеться з вами.", parse_mode='HTML')
             bot.edit_message_caption(chat_id=call.message.chat.id, message_id=call.message.message_id, 
                                      caption=call.message.caption + "\n\n✅ <b>ПІДТВЕРДЖЕНО</b>", reply_markup=None)
         elif action == "decline":
-            bot.send_message(target_id, "❌ <b>Оплата відхилена.</b>\nЗв'яжіться з підтримкою: @garant_mango", parse_mode='HTML')
+            bot.send_message(target_id, "❌ <b>Оплата відхилена.</b>\nЗверніться в підтримку.", parse_mode='HTML')
             bot.edit_message_caption(chat_id=call.message.chat.id, message_id=call.message.message_id, 
                                      caption=call.message.caption + "\n\n❌ <b>ВІДХИЛЕНО</b>", reply_markup=None)
 
 # --- ПРИЙОМ ОПЛАТИ ТА РОЗСИЛКА ---
 @bot.message_handler(content_types=['photo'])
 def handle_photos(message):
-    # Обробка маркетингової розсилки
     if marketing_state.get(message.from_user.id) == "waiting_promo":
         marketing_state.pop(message.from_user.id)
         count = 0
@@ -163,23 +162,19 @@ def handle_photos(message):
                 count += 1
             except: continue
         bot.send_message(message.chat.id, f"✅ Розсилка завершена! Отримали: {count} юзерів.")
-        return
 
-# Функція обробки чеку
 def process_payment_proof(message, item_name, price, order_code):
     if not message.photo:
         msg = bot.reply_to(message, "❌ Надішліть саме <b>фото чеку</b>.")
         bot.register_next_step_handler(msg, process_payment_proof, item_name, price, order_code)
         return
 
-    bot.send_message(message.chat.id, "✅ <b>Заявка надіслана!</b> Очікуйте підтвердження адміном.", parse_mode='HTML')
-    
+    bot.send_message(message.chat.id, "✅ <b>Заявка надіслана!</b> Очікуйте підтвердження.", parse_mode='HTML')
     admin_markup = types.InlineKeyboardMarkup()
-    # Виправлений формат callback_data: adm_action_userid
-    admin_markup.add(types.InlineKeyboardButton("✅ Оплата прийшла", callback_data=f"adm_confirm_{message.chat.id}"),
+    admin_markup.add(types.InlineKeyboardButton("✅ Прийняти", callback_data=f"adm_confirm_{message.chat.id}"),
                      types.InlineKeyboardButton("❌ Відхилити", callback_data=f"adm_decline_{message.chat.id}"))
     
-    caption = (f"🔔 <b>НОВЕ ЗАМОВЛЕННЯ</b>\n👤 Юзер: @{message.from_user.username}\n🆔 ID: <code>{message.from_user.id}</code>\n"
+    caption = (f"🔔 <b>ЗАМОВЛЕННЯ</b>\n👤 @{message.from_user.username}\n🆔 ID: <code>{message.from_user.id}</code>\n"
                f"📦 Товар: {item_name}\n💰 Сума: {price}\n🔑 Код: <code>{order_code}</code>")
     bot.send_photo(ADMIN_ID, message.photo[-1].file_id, caption=caption, parse_mode='HTML', reply_markup=admin_markup)
 
@@ -191,16 +186,16 @@ def handle_text(message):
     if message.text == "⭐ Купити зірки":
         bot.send_message(message.chat.id, "✨ <b>Оберіть пакет Stars:</b>", parse_mode='HTML', reply_markup=buy_stars_menu())
     elif message.text == "💎 Купити Premium":
-        bot.send_message(message.chat.id, "💎 <b>Оберіть спосіб активації:</b>", parse_mode='HTML', reply_markup=premium_choice_menu())
+        bot.send_message(message.chat.id, "💎 <b>Оберіть тип активації:</b>", parse_mode='HTML', reply_markup=premium_choice_menu())
+    elif message.text == "📱 Вірт. номери":
+        bot.send_message(message.chat.id, "📱 <b>Оберіть країну номера:</b>", parse_mode='HTML', reply_markup=virt_numbers_menu())
     elif message.text == "💬 Відгуки":
-        markup = types.InlineKeyboardMarkup().add(types.InlineKeyboardButton("Читати 📝", url=REVIEWS_LINK))
-        bot.send_message(message.chat.id, "Наші клієнти кажуть:", reply_markup=markup)
+        markup = types.InlineKeyboardMarkup().add(types.InlineKeyboardButton("Переглянути 📝", url=REVIEWS_LINK))
+        bot.send_message(message.chat.id, "Відгуки наших клієнтів:", reply_markup=markup)
     elif message.text == "🆘 Тех. Підтримка":
         markup = types.InlineKeyboardMarkup().add(types.InlineKeyboardButton("Менеджер 📩", url="https://t.me/garant_mango"))
-        bot.send_message(message.chat.id, "Виникли питання? Ми допоможемо!", reply_markup=markup)
+        bot.send_message(message.chat.id, "Маєте запитання? Пишіть нам!", reply_markup=markup)
 
-# --- ЗАПУСК ---
 if __name__ == '__main__':
     keep_alive()
-    print("Бот та сервер запущені...")
-    bot.infinity_polling(timeout=10, long_polling_timeout=5)
+    bot.infinity_polling()
