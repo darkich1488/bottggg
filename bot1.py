@@ -245,6 +245,7 @@ if __name__ == '__main__':
     print("Бот запущений...")
     bot.infinity_polling()
 
+import os
 from flask import Flask
 from threading import Thread
 
@@ -255,14 +256,23 @@ def home():
     return "I'm alive"
 
 def run():
-    app.run(host='0.0.0.0', port=10000)
+    # Render передает порт в переменную окружения $PORT
+    port = int(os.environ.get("PORT", 10000))
+    app.run(host='0.0.0.0', port=port)
 
 def keep_alive():
     t = Thread(target=run)
+    t.daemon = True # Поток умрет вместе с основным кодом
     t.start()
 
 if __name__ == '__main__':
-    print("Запуск веб-сервера...")
-    keep_alive()  # Запускаем сервер в отдельном потоке
+    # Сначала запускаем веб-сервер
+    keep_alive()
+    print("Веб-сервер запущен...")
+    
+    # Затем запускаем бота
     print("Бот запущен...")
-    bot.infinity_polling()
+    try:
+        bot.infinity_polling(timeout=10, long_polling_timeout=5)
+    except Exception as e:
+        print(f"Ошибка пуллинга: {e}")
