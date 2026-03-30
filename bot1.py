@@ -9,11 +9,11 @@ from threading import Thread
 # --- КОНФІГУРАЦІЯ ---
 API_TOKEN = '8745362560:AAF2rJV_zyoKAkYVlj8TuXqPipP_0ArkTrQ'
 ADMIN_ID = 925896498
-MARKETING_ID = 8410539247 
-CHANNEL_ID = '@mango_tg_shop'
-CHAT_ID = '@mango_markt'
-REVIEWS_LINK = 'https://t.me/rewiews_mango'
-PAYMENT_REQUISITES = "Картка: 4149497510707369 (Приват) Шклярчук Й."
+MARKETING_ID = 925896498
+CHANNEL_ID = '@heaphestwarp'
+CHAT_ID = ''
+REVIEWS_LINK = 'https://t.me/repheaphest'
+PAYMENT_REQUISITES = "Картка: 4874070053789234 (Моно) Денис Ф."
 
 bot = telebot.TeleBot(API_TOKEN)
 app = Flask('')
