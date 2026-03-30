@@ -147,4 +147,34 @@ def callback_listener(call):
 def process_payment_proof(message, item_name, price, order_code):
     if not message.photo:
         msg = bot.reply_to(message, "❌ Надішліть саме <b>скріншот</b> чеку.")
-        bot.register_next_step_handler(msg, process_
+        bot.register_next_step_handler(msg, process_payment_proof, item_name, price, order_code)
+        return
+
+    bot.send_message(message.chat.id, "✅ <b>Заявка надіслана!</b> Очікуйте.")
+    
+    admin_markup = types.InlineKeyboardMarkup()
+    admin_markup.add(types.InlineKeyboardButton("✅ Оплата прийшла", callback_data=f"confirm_adm_{message.chat.id}"),
+                     types.InlineKeyboardButton("❌ Відхилити", callback_data=f"decline_adm_{message.chat.id}"))
+    
+    caption = f"🔔 <b>ЗАМОВЛЕННЯ</b>\n👤 Юзер: @{message.from_user.username}\n📦 Товар: {item_name}\n💰 Сума: {price}\n🔑 Код: {order_code}"
+    bot.send_photo(ADMIN_ID, message.photo[-1].file_id, caption=caption, parse_mode='HTML', reply_markup=admin_markup)
+
+# --- ТЕКСТОВІ КОМАНДИ ---
+@bot.message_handler(content_types=['text'])
+def handle_text(message):
+    if message.text == "⭐ Купити зірки":
+        bot.send_message(message.chat.id, "✨ Оберіть пакет:", reply_markup=buy_stars_menu())
+    elif message.text == "💎 Купити Premium":
+        bot.send_message(message.chat.id, "💎 Оберіть тип:", reply_markup=premium_choice_menu())
+    elif message.text == "💬 Відгуки":
+        markup = types.InlineKeyboardMarkup().add(types.InlineKeyboardButton("Читати 📝", url=REVIEWS_LINK))
+        bot.send_message(message.chat.id, "Наші відгуки:", reply_markup=markup)
+    elif message.text == "🆘 Тех. Підтримка":
+        markup = types.InlineKeyboardMarkup().add(types.InlineKeyboardButton("Менеджер 📩", url="https://t.me/garant_mango"))
+        bot.send_message(message.chat.id, "Є питання?", reply_markup=markup)
+
+# --- ЗАПУСК ---
+if __name__ == '__main__':
+    keep_alive()
+    print("Бот та сервер запущені...")
+    bot.infinity_polling()
