@@ -7,7 +7,7 @@ from flask import Flask
 from threading import Thread
 
 # --- КОНФІГУРАЦІЯ ---
-API_TOKEN = '8745362560:AAF2rJV_zyoKAkYVlj8TuXqPipP_0ArkTrQ'
+API_TOKEN = '8700045247:AAHLRJ7TzUHHZZyLbcy6TuNwLtWF90JbfkY'
 ADMIN_ID = 925896498
 MARKETING_ID = 925896498
 CHANNEL_ID = '@heaphestwarp'
