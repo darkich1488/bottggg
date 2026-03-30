@@ -21,7 +21,7 @@ app = Flask('')
 user_db = set() 
 marketing_state = {}
 
-# --- ВЕБ-СЕРВЕР ---
+# --- ВЕБ-СЕРВЕР ДЛЯ ПІДТРИМКИ ЖИТТЄЗДАТНОСТІ ---
 @app.route('/')
 def home():
     return "Bot is alive!"
@@ -52,16 +52,19 @@ def check_subscribe(user_id):
 def main_menu():
     markup = types.ReplyKeyboardMarkup(resize_keyboard=True, row_width=2)
     markup.add("⭐ Купити зірки", "💎 Купити Premium")
-    markup.add("📱 Вірт. номери", "💬 Відгуки") # Додано кнопку номерів
+    markup.add("📱 Вірт. номери", "💬 Відгуки")
     markup.add("🆘 Тех. Підтримка")
     return markup
 
 def virt_numbers_menu():
     markup = types.InlineKeyboardMarkup(row_width=1)
     markup.add(
-        types.InlineKeyboardButton("🇺🇦 Україна — 150₴", callback_data="buy|Virt|Ukraine|150₴"),
-        types.InlineKeyboardButton("🇺🇸 США — 100₴", callback_data="buy|Virt|USA|100₴"),
-        types.InlineKeyboardButton("🇵🇱 Польща — 120₴", callback_data="buy|Virt|Poland|120₴")
+        types.InlineKeyboardButton("🇺🇸 США — 80₴", callback_data="buy|Virt|USA|80₴"),
+        types.InlineKeyboardButton("🇰🇪 Кенія — 80₴", callback_data="buy|Virt|Kenya|80₴"),
+        types.InlineKeyboardButton("🇨🇦 Канада — 80₴", callback_data="buy|Virt|Canada|80₴"),
+        types.InlineKeyboardButton("🇰🇿 Казахстан — 120₴", callback_data="buy|Virt|Kazakhstan|120₴"),
+        types.InlineKeyboardButton("🇺🇦 Україна — 120₴", callback_data="buy|Virt|Ukraine|120₴"),
+        types.InlineKeyboardButton("🇷🇺 Росія — 120₴", callback_data="buy|Virt|Russia|120₴")
     )
     return markup
 
@@ -112,7 +115,7 @@ def callback_listener(call):
             bot.delete_message(call.message.chat.id, call.message.message_id)
             bot.send_message(call.message.chat.id, "✅ Доступ відкрито!", reply_markup=main_menu())
         else:
-            bot.answer_callback_query(call.id, "❌ Ви все ще не підписані на канал!", show_alert=True)
+            bot.answer_callback_query(call.id, "❌ Ви все ще не підписані!", show_alert=True)
 
     elif call.data == "mkt_start":
         marketing_state[call.from_user.id] = "waiting_promo"
@@ -142,11 +145,11 @@ def callback_listener(call):
         parts = call.data.split("_")
         action, target_id = parts[1], parts[2]
         if action == "confirm":
-            bot.send_message(target_id, "🌟 <b>Оплата підтверджена!</b>\nМенеджер зв'яжеться з вами.", parse_mode='HTML')
+            bot.send_message(target_id, "🌟 <b>Оплата підтверджена!</b>\nВаше замовлення виконується.", parse_mode='HTML')
             bot.edit_message_caption(chat_id=call.message.chat.id, message_id=call.message.message_id, 
                                      caption=call.message.caption + "\n\n✅ <b>ПІДТВЕРДЖЕНО</b>", reply_markup=None)
         elif action == "decline":
-            bot.send_message(target_id, "❌ <b>Оплата відхилена.</b>\nЗверніться в підтримку.", parse_mode='HTML')
+            bot.send_message(target_id, "❌ <b>Оплата відхилена.</b>\nЗв'яжіться з підтримкою.", parse_mode='HTML')
             bot.edit_message_caption(chat_id=call.message.chat.id, message_id=call.message.message_id, 
                                      caption=call.message.caption + "\n\n❌ <b>ВІДХИЛЕНО</b>", reply_markup=None)
 
