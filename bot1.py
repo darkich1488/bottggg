@@ -1,38 +1,33 @@
-import telebot
 
-from telebot import types
 
 import random
 
 import string
 
-import os
 
 from flask import Flask
 
 from threading import Thread
 
+import os
+import telebot
+from telebot import types
 
+API_TOKEN = os.getenv("API_TOKEN")
 
-# --- КОНФІГУРАЦІЯ ---
+ADMIN_ID = int(os.getenv("ADMIN_ID"))
+MARKETING_ID = int(os.getenv("MARKETING_ID"))
+SECOND_ADMIN_ID = int(os.getenv("SECOND_ADMIN_ID"))
 
-API_TOKEN = '8700045247:AAHLRJ7TzUHHZZyLbcy6TuNwLtWF90JbfkY'
+CHANNEL_ID = os.getenv("CHANNEL_ID")
+REVIEWS_LINK = os.getenv("REVIEWS_LINK")
+PAYMENT_REQUISITES = os.getenv("PAYMENT_REQUISITES")
 
-ADMIN_ID = 925896498
-
-MARKETING_ID = 925896498
-
-CHANNEL_ID = '@heaphestwarp'
-
-REVIEWS_LINK = 'https://t.me/repheaphest'
-
-PAYMENT_REQUISITES = "Картка: 4874070053789234 (Моно) Денис Ф."
-
-
+ADMINS = [ADMIN_ID, MARKETING_ID, SECOND_ADMIN_ID]
 
 bot = telebot.TeleBot(API_TOKEN)
 
-app = Flask('')
+
 
 
 
