@@ -358,7 +358,7 @@ def handle_text(message):
 
     elif message.text == "🆘 Тех. Підтримка":
         markup = types.InlineKeyboardMarkup().add(
-            types.InlineKeyboardButton("Менеджер 📩", url="https://t.me/garant_mango")
+            types.InlineKeyboardButton("Менеджер 📩", url="https://t.me/@HepKer_Helpbot")
         )
         bot.send_message(message.chat.id, "Маєте запитання? Пишіть нам!", reply_markup=markup)
 
